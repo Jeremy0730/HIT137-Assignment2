@@ -1,26 +1,44 @@
 #!/usr/bin/env python3
-"""Encrypt/decrypt text: reads raw_text.txt, writes encrypted and decrypted files, verifies match.
-
-Plaintext input file name is fixed: raw_text.txt. This stage only rotates lowercase a-z by shift1
-on the full alphabet; shift2 is read but unused. Other characters unchanged.
-"""
+"""Split-alphabet encrypt/decrypt for raw_text.txt (fixed name). Each half of a-z and A-Z uses mod-13 shifts."""
 
 import os
 
 
 def encrypt_char(char, shift1, shift2):
-    _ = shift2
     if char.islower():
-        pos = ord(char) - ord("a")
-        return chr(ord("a") + (pos + shift1) % 26)
+        if "a" <= char <= "m":
+            s = shift1 * shift2
+            p = (ord(char) - ord("a") + s) % 13
+            return chr(ord("a") + p)
+        s = shift1 + shift2
+        p = (ord(char) - ord("n") - s) % 13
+        return chr(ord("n") + p)
+    if char.isupper():
+        if "A" <= char <= "M":
+            p = (ord(char) - ord("A") - shift1) % 13
+            return chr(ord("A") + p)
+        s = shift2 ** 2
+        p = (ord(char) - ord("N") + s) % 13
+        return chr(ord("N") + p)
     return char
 
 
 def decrypt_char(char, shift1, shift2):
-    _ = shift2
     if char.islower():
-        pos = ord(char) - ord("a")
-        return chr(ord("a") + (pos - shift1) % 26)
+        if "a" <= char <= "m":
+            s = shift1 * shift2
+            p = (ord(char) - ord("a") - s) % 13
+            return chr(ord("a") + p)
+        s = shift1 + shift2
+        p = (ord(char) - ord("n") + s) % 13
+        return chr(ord("n") + p)
+    if char.isupper():
+        if "A" <= char <= "M":
+            p = (ord(char) - ord("A") + shift1) % 13
+            return chr(ord("A") + p)
+        s = shift2 ** 2
+        p = (ord(char) - ord("N") - s) % 13
+        return chr(ord("N") + p)
     return char
 
 
@@ -60,26 +78,24 @@ def verification_function(original_file, decrypted_file):
 
 def main():
     base = os.path.dirname(os.path.abspath(__file__))
-    raw_path = os.path.join(base, "raw_text.txt")
-    enc_path = os.path.join(base, "encrypted_text.txt")
-    dec_path = os.path.join(base, "decrypted_text.txt")
+    raw_f = os.path.join(base, "raw_text.txt")
+    enc_f = os.path.join(base, "encrypted_text.txt")
+    dec_f = os.path.join(base, "decrypted_text.txt")
 
-    if not os.path.isfile(raw_path):
-        print(f"Missing {raw_path}")
+    if not os.path.isfile(raw_f):
+        print(f"Missing {raw_f}")
         return
 
     try:
-        s1 = input("shift1 (default 3): ").strip() or "3"
-        s2 = input("shift2 (default 5): ").strip() or "5"
-        k1, k2 = int(s1), int(s2)
+        k1 = int(input("shift1 (default 3): ").strip() or "3")
+        k2 = int(input("shift2 (default 5): ").strip() or "5")
     except ValueError:
         print("Invalid integers.")
         return
 
-    print("Only shift1 affects lowercase a-z; shift2 is unused.")
-    encryption_function(raw_path, enc_path, k1, k2)
-    decryption_function(enc_path, dec_path, k1, k2)
-    print("Verification OK." if verification_function(raw_path, dec_path) else "Verification failed.")
+    encryption_function(raw_f, enc_f, k1, k2)
+    decryption_function(enc_f, dec_f, k1, k2)
+    print("OK" if verification_function(raw_f, dec_f) else "Mismatch")
 
 
 if __name__ == "__main__":

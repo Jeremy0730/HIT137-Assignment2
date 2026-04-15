@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recursive-descent evaluator: binary ops, parentheses, non-negative numbers only. No unary minus or implicit multiply."""
+"""Recursive-descent evaluator with unary minus (neg in tree). No implicit multiplication."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ def tokenize(expression: str) -> list[tuple[str, Any]]:
             tokens.append(("RPAREN", ")"))
             i += 1
             continue
-        raise ValueError(f"Unexpected character {ch!r} at {i}")
+        raise ValueError(f"Unexpected character '{ch}' at {i}")
     tokens.append(("END", None))
     return tokens
 
@@ -80,7 +80,7 @@ def parse_term(tokens: list[tuple[str, Any]], pos: int) -> tuple[Any, int]:
 
 def parse_factor(tokens: list[tuple[str, Any]], pos: int) -> tuple[Any, int]:
     if pos >= len(tokens):
-        raise ValueError("Unexpected end of input")
+        raise ValueError("Unexpected end of expression")
     kind, val = tokens[pos]
     if kind == "NUM":
         return val, pos + 1
@@ -90,6 +90,10 @@ def parse_factor(tokens: list[tuple[str, Any]], pos: int) -> tuple[Any, int]:
         if pos >= len(tokens) or tokens[pos][0] != "RPAREN":
             raise ValueError("Missing ')'")
         return tree, pos + 1
+    if kind == "OP" and val == "-":
+        pos += 1
+        sub, pos = parse_factor(tokens, pos)
+        return ("neg", sub), pos
     if kind == "OP" and val == "+":
         raise ValueError("Unary plus is not allowed")
     raise ValueError(f"Unexpected token: {tokens[pos]}")
@@ -104,8 +108,9 @@ def parse(tokens: list[tuple[str, Any]]) -> Any:
 
 def format_tree(tree: Any) -> str:
     if isinstance(tree, tuple):
-        op, a, b = tree[0], tree[1], tree[2]
-        return f"({op} {format_tree(a)} {format_tree(b)})"
+        if tree[0] == "neg":
+            return f"(neg {format_tree(tree[1])})"
+        return f"({tree[0]} {format_tree(tree[1])} {format_tree(tree[2])})"
     if isinstance(tree, float) and tree == int(tree):
         return str(int(tree))
     return str(tree)
@@ -113,6 +118,8 @@ def format_tree(tree: Any) -> str:
 
 def evaluate_tree(tree: Any) -> float | int:
     if isinstance(tree, tuple):
+        if tree[0] == "neg":
+            return -evaluate_tree(tree[1])
         op, L, R = tree[0], tree[1], tree[2]
         x, y = evaluate_tree(L), evaluate_tree(R)
         if op == "+":
@@ -156,7 +163,6 @@ def _write_output(records: list[dict[str, Any]], path: str) -> None:
 
 
 def evaluate_file(input_path: str) -> list[dict]:
-    """Read expressions from input_path; write output.txt in the same directory; return one dict per line."""
     input_path = os.path.abspath(input_path)
     if not os.path.isfile(input_path):
         raise FileNotFoundError(input_path)
