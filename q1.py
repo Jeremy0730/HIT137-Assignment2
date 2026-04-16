@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Split-alphabet encrypt/decrypt for raw_text.txt (fixed name). Each half of a-z and A-Z uses mod-13 shifts."""
+"""Split-alphabet encrypt/decrypt for raw_text.txt (fixed name). Each half of a-z and A-Z uses mod-13 shiftsaa."""
 
 import os
 
