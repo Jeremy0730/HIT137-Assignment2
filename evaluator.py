@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recursive-descent evaluator with unary minus (neg in tree). No implicit multiplication."""
+"""Recursive-descent evaluator with unary minus (neg in tree). No implicit multiplicationaa."""
 
 from __future__ import annotations
 
