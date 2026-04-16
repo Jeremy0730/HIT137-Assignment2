@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Split-alphabet encrypt/decrypt for raw_text.txt (fixed name). Each half of a-z and A-Z uses mod-13 shiftsaa."""
+"""Full Q1: raw_text.txt (fixed name), split-alphabet cipher, encrypt/decrypt/verify with detailed mismatch diagnostics."""
 
 import os
 
@@ -51,29 +51,45 @@ def decrypt_text(text, shift1, shift2):
 
 
 def encryption_function(input_file, output_file, shift1, shift2):
+    print(f"Reading {input_file}")
     with open(input_file, "r", encoding="utf-8") as f:
         body = f.read()
+    print(f"{len(body)} chars; encrypting...")
     out = encrypt_text(body, shift1, shift2)
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(out)
+    print(f"Wrote {output_file}")
     return out
 
 
 def decryption_function(input_file, output_file, shift1, shift2):
+    print(f"Reading {input_file}")
     with open(input_file, "r", encoding="utf-8") as f:
         body = f.read()
     plain = decrypt_text(body, shift1, shift2)
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(plain)
+    print(f"Wrote {output_file}")
     return plain
 
 
 def verification_function(original_file, decrypted_file):
+    print("Verifying...")
     with open(original_file, "r", encoding="utf-8") as f:
         a = f.read()
     with open(decrypted_file, "r", encoding="utf-8") as f:
         b = f.read()
-    return a == b
+    if a == b:
+        print(f"Match ({len(a)} chars).")
+        return True
+    print(f"Lengths: {len(a)} vs {len(b)}")
+    n = min(len(a), len(b))
+    bad = [i for i in range(n) if a[i] != b[i]][:10]
+    if bad:
+        print(f"First differing indices: {bad}")
+        for i in bad[:5]:
+            print(f"  {i}: {a[i]!r} vs {b[i]!r}")
+    return False
 
 
 def main():
@@ -95,8 +111,8 @@ def main():
 
     encryption_function(raw_f, enc_f, k1, k2)
     decryption_function(enc_f, dec_f, k1, k2)
-    print("OK" if verification_function(raw_f, dec_f) else "Mismatch")
-
+    result = verification_function(raw_f, dec_f)
+    print("OK" if result else "Mismatch")
 
 if __name__ == "__main__":
     main()

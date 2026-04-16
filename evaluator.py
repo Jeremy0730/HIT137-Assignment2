@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recursive-descent evaluator with unary minus (neg in tree). No implicit multiplicationaa."""
+"""Expression evaluator: recursive descent, unary minus, implicit multiply, evaluate_file() API."""
 
 from __future__ import annotations
 
@@ -70,11 +70,21 @@ def parse_expression(tokens: list[tuple[str, Any]], pos: int) -> tuple[Any, int]
 
 def parse_term(tokens: list[tuple[str, Any]], pos: int) -> tuple[Any, int]:
     left, pos = parse_factor(tokens, pos)
-    while pos < len(tokens) and tokens[pos][0] == "OP" and tokens[pos][1] in "*/":
-        op = tokens[pos][1]
-        pos += 1
-        right, pos = parse_factor(tokens, pos)
-        left = (op, left, right)
+    while pos < len(tokens):
+        if tokens[pos][0] == "OP" and tokens[pos][1] in "*/":
+            op = tokens[pos][1]
+            pos += 1
+            right, pos = parse_factor(tokens, pos)
+            left = (op, left, right)
+        elif pos > 0:
+            prev, cur = tokens[pos - 1][0], tokens[pos][0]
+            if prev in ("NUM", "RPAREN") and cur in ("LPAREN", "NUM"):
+                right, pos = parse_factor(tokens, pos)
+                left = ("*", left, right)
+            else:
+                break
+        else:
+            break
     return left, pos
 
 
@@ -163,6 +173,7 @@ def _write_output(records: list[dict[str, Any]], path: str) -> None:
 
 
 def evaluate_file(input_path: str) -> list[dict]:
+    """Read UTF-8 expressions from input_path; write output.txt beside it; return one dict per line."""
     input_path = os.path.abspath(input_path)
     if not os.path.isfile(input_path):
         raise FileNotFoundError(input_path)
@@ -180,8 +191,9 @@ def main() -> None:
     if not os.path.isfile(inp):
         print(f"Missing: {inp}")
         return
-    evaluate_file(inp)
-    print("Done.")
+    rows = evaluate_file(inp)
+    ok = sum(1 for r in rows if r["result"] != "ERROR")
+    print(f"{len(rows)} line(s), {ok} ok. output.txt next to input.")
 
 
 if __name__ == "__main__":
